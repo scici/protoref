@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package syringe_pump;
+
+//Interface exported by each Syringe Pump server
+service SyringePump {
+    // Sends syringe pump instructions and receives current status back
+    rpc SendInstruction(Instruction) returns (Status) {}
+    
+    // Receive current syringe pump status
+    // Empty argument indicates that no arguments are passed
+    rpc GetStatus(google.protobuf.Empty) returns (Status) {}
+
+    // Stream status from a syringe pump
+    // Empty argument indicates that no arguments are passed
+    rpc GetStatusStreamed(google.protobuf.Empty) returns (stream Status) {}
+}
+
+
+//Instruction to send to a syringe pump
+message Instruction {
+    oneof direction {
+        bool infuse = 1;
+        bool withdraw = 2;
+    }
+    string rate = 3; 
+    string volume = 4;
+    string time = 5; 
+    bool stop = 6; // Set true to stop the syringe pump
+}
+
+//Status message to be returned by Syringe Pump server
+//All values are optional, though as many should be returned as possible
+message Status {
+    oneof direction {
+        bool infuse = 1;
+        bool withdraw = 2;
+    }
+    //rate as a string representing a tuple, such as (100.0, (('milliliters / min', 1.0),))
+    string rate = 3;  
+
+    //volume of liquid to dispense
+    // as a string representing a tuple, such as (100.0, (('milliliters', 1.0),))
+    string volume = 4;
+
+    //time as a string representing a tuple, such as (100.0, (('seconds', 1.0),))
+    string time_remaining = 5;
+
+        // Make and model of the syringe pump
+    Make make = 6;
+
+    //Motor Condition
+    MotorCondition motor = 7;
+
+    message Make {
+        string model = 1;
+        string brand = 2;
+    }
+
+    message MotorCondition {
+        oneof type {
+            bool running = 1; // Syringe pump running
+            bool stopped = 2; // Syringe pump stopped
+            bool stalled = 4; // Error for pump stalling
+            bool no_comm = 5; // Error for failing commmunication with pump
+        }
+
+        string message = 3; // Error Message
+    }
+
+
+
+} 
